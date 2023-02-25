@@ -1,11 +1,11 @@
 from unittest import TestCase
 
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, create_engine, delete
 from sqlalchemy.orm import Session
 from core.settings import DECLARATIVE_BASE
 from core.schema import schema
 
-from users.models import create_user, get_all_users
+from users.models import User, create_user, delete_user, get_all_users
 
 
 class DB:
@@ -16,7 +16,7 @@ class DB:
 
 def set_up_test_db() -> DB: 
     print("Setting up database")
-    engine = create_engine("sqlite:///test.db", echo=False)
+    engine = create_engine("sqlite://", echo=False)
     session = Session(engine)
     DECLARATIVE_BASE.metadata.create_all(engine)
     return DB(engine, session)
@@ -36,15 +36,15 @@ class TestUsersModels(TestCase):
 
     def test_create_user(self):
         new_user = create_user(
+                db=self.session,
                 first_name="Test",
                 last_name="User",
-                email="test@email.com",
-                session=self.session)
+                email="test@email.com")
         self.assertIsNotNone(new_user)
         self.assertEqual(str(new_user.first_name), "Test")
 
     def test_get_all_users(self):
-        users = get_all_users(session=self.session)
+        users = get_all_users(db=self.session)
         self.assertIsNotNone(users)
 
     def tearDown(self) -> None:
@@ -101,6 +101,10 @@ class TestUsersQueries(TestCase):
         self.assertIsNone(result.errors)
         if result.data:
             self.assertIsNotNone(str(result.data.get("newUser")))
+
+
+    def test_delete_users(self):
+        delete_user(User.first_name == "Testing", db=self.session)
 
 
     def tearDown(self) -> None:

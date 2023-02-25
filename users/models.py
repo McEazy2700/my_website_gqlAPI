@@ -1,7 +1,7 @@
 from typing import Sequence
-from sqlalchemy import select, String
+from sqlalchemy import delete, select, String
 from sqlalchemy.orm import Mapped, Session, mapped_column
-from core.settings import DECLARATIVE_BASE, DB_SESSION as session
+from core.settings import DECLARATIVE_BASE
 
 
 class User(DECLARATIVE_BASE):
@@ -19,17 +19,22 @@ class User(DECLARATIVE_BASE):
             email={self.email})"""
 
 
-def get_all_users(session: Session=session) -> Sequence[User]:
+def get_all_users(db: Session) -> Sequence[User]:
     statement = select(User)
-    return session.scalars(statement).all()
+    return db.scalars(statement).all()
 
 
-def create_user(first_name: str, last_name: str, email: str, session: Session = session) -> User:
+def create_user(db: Session, first_name: str, last_name: str, email: str) -> User:
     new_user = User(
         first_name=first_name,
         last_name=last_name,
         email=email)
-    session.add(new_user)
-    session.commit()
-    session.refresh(new_user)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
     return new_user
+
+
+def delete_user(*whereclause: bool, db: Session):
+    delete_staement = delete(User).where(*whereclause)
+    db.execute(delete_staement)
